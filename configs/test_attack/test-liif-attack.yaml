@@ -23,6 +23,5 @@ attack_setting:
   num_iters: 50
   query_number: 4
   query_block: 1
-  is_transfer: True
-  pred_scales: [18,24,30]
+  pred_scales: [2,4,8]
 

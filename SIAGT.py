@@ -49,7 +49,7 @@ def batched_predict_grad(model, inp, coord, cell, bsize):
     pred = torch.cat(preds, dim=1)
     return pred
 
-def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell, alpha, num_iters, beta,is_transfer):
+def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell, alpha, num_iters, beta):
     inp_sub = torch.FloatTensor([0.5]).view(1, -1, 1, 1).cuda()
     inp_div = torch.FloatTensor([0.5]).view(1, -1, 1, 1).cuda()
     xn = (xn - inp_sub) / inp_div
@@ -60,10 +60,7 @@ def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell
         pred_attack = batched_predict_grad(model, xn, coord, cell, 30000)
         pred_attack_adjacent = batched_predict_grad(model, xn, coord_adjacent, cell, 30000)
         model.zero_grad()
-        #if is_transfer:
         loss = loss_fn(pred_attack, pred_query) + beta * loss_fn(pred_attack_adjacent, pred_attack)
-        #else:
-            #loss = loss_fn(pred_attack, pred_query)
         loss.backward()
         images_grad = (alpha/(i+1)) * torch.sign(xn.grad.data)
         xn1 = torch.clamp(xn + images_grad, -1, 1)
@@ -95,7 +92,6 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
     query_number = int(setting['query_number'])
     query_block = int(setting['query_block'])
     num_iters = int(setting['num_iters'])
-    is_transfer = setting['is_transfer']
     PSNR = {}
     SSIM = {}
     LPIPS ={}
@@ -145,7 +141,7 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
         xn = perturbed_image
         x0 = batch['inp'].clone()
         images, time = SIAGT_attack(model, loss_fn, xn, x0, pred_query,coord, coord_adjacent, cell, alpha=alpha,
-                                  num_iters=num_iters,beta = beta,is_transfer = is_transfer)
+                                  num_iters=num_iters,beta = beta)
         save = images * gt_div + gt_sub
         save.clamp_(0, 1)
         save_images(save, j, tpye='lr')
@@ -199,13 +195,13 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
         print('scale: ' + str(s))
         print('SR_PSNR: {:.4f}'.format(PSNR[s].item()))
         print('SR_SSIM: {:.4f}'.format(SSIM[s].item()))
-        #print('SR_LPIPS: {:.4f}'.format(LPIPS[s].item().item()))
+        print('SR_LPIPS: {:.4f}'.format(LPIPS[s].item()))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='configs/test_attack/test-liif-attack.yaml')
     parser.add_argument('--model', default='pre-models/edsr-baseline-liif.pth') # or pre-models/edsr-baseline-lte.pth
-    parser.add_argument('--gpu', default='0')
+    parser.add_argument('--gpu', default='1')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu

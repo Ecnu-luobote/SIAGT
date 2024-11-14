@@ -8,7 +8,7 @@ from torch.optim import SGD, Adam
 from tensorboardX import SummaryWriter
 import lpips
 from torchvision.transforms.functional import normalize
-
+os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 loss_fn_vgg = lpips.LPIPS(net='vgg').cuda()
 class Averager():
 
