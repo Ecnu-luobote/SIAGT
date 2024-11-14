@@ -4,7 +4,8 @@ This repository is implementation for SIAGT("Scale-Invariant Adversarial Attack
 
 against Arbitrary-scale Super-resolution"):
 
-![image-20241114151758052](C:\Users\luoxin\AppData\Roaming\Typora\typora-user-images\image-20241114151758052.png)
+![image](https://github.com/user-attachments/assets/999f6817-404e-4831-8534-a301d549acf6)
+
 
 ### Environment
 - Python 3
@@ -79,6 +80,8 @@ python SIAGY.py --config configs/test_attack/test-liif-attack.yaml --model pre-m
 
 - vis_result
 
-  ![image-20241114153622639](C:\Users\luoxin\AppData\Roaming\Typora\typora-user-images\image-20241114153622639.png)
+![image](https://github.com/user-attachments/assets/b3dfef97-28f9-4604-8a39-2cf6d797e3d3)
+
+
 
   
