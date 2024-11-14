@@ -8,11 +8,33 @@ from basicsr import tensor2img
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+import lpips
 import datasets
 import models
 import utils
 from torchvision import transforms
+
+
+def get_attack_model(source = None,target = None):
+    model_mapping = {}
+    model_spec = torch.load('pre-models/edsr-baseline-aliif.pth')['model']
+    if model_spec['args']['imnet_spec']['name'] == 'mlp_pw' :
+        model_spec['args']['basis_spec']['args']['state']='test'
+        model_spec['args']['pdn_spec']['name'] = 'ExpansionNet'
+        model_spec['args']['basis_spec']['args']['path'] = 'pre-models/edsr-baseline-aliif.pth'
+    model_aliif = models.make(model_spec, load_sd=True).cuda()
+    model_mapping['aliif'] = model_aliif
+    model_spec = torch.load('pre-models/edsr-baseline-liif.pth')['model']
+    model_liif = models.make(model_spec, load_sd=True).cuda()
+    model_mapping['liif'] = model_liif
+    model_spec = torch.load('pre-models/edsr-baseline-lte.pth')['model']
+    model_lte = models.make(model_spec, load_sd=True).cuda()
+    model_mapping['lte'] = model_lte
+    model_spec = torch.load('pre-models/edsr-b_lm-liif.pth')['model']
+    model_lmf = models.make(model_spec, load_sd=True).cuda()
+    model_mapping['lmf'] = model_lmf
+
+    return model_mapping[source],model_mapping[target]
 
 
 def save_images(img, index, tpye='lr'):
@@ -49,7 +71,7 @@ def batched_predict_grad(model, inp, coord, cell, bsize):
     pred = torch.cat(preds, dim=1)
     return pred
 
-def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell, alpha, num_iters, beta,is_transfer):
+def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell, eval_bsize,alpha, num_iters, beta,setting):
     inp_sub = torch.FloatTensor([0.5]).view(1, -1, 1, 1).cuda()
     inp_div = torch.FloatTensor([0.5]).view(1, -1, 1, 1).cuda()
     xn = (xn - inp_sub) / inp_div
@@ -57,13 +79,20 @@ def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell
     start_time = time.time()
     for i in range(num_iters):
         xn.requires_grad = True
-        pred_attack = batched_predict_grad(model, xn, coord, cell, 30000)
-        pred_attack_adjacent = batched_predict_grad(model, xn, coord_adjacent, cell, 30000)
+        if setting['source_model'] == 'lmf':
+           pred_attack = model(xn, coord, cell)
+           if setting['trans']:
+               pred_attack_adjacent = model(xn, coord_adjacent, cell)
+        else:
+            pred_attack = batched_predict_grad(model, xn, coord, cell, eval_bsize)
+            if setting['trans']:
+                pred_attack_adjacent = batched_predict_grad(model, xn, coord_adjacent, cell, eval_bsize)
+
         model.zero_grad()
-        #if is_transfer:
-        loss = loss_fn(pred_attack, pred_query) + beta * loss_fn(pred_attack_adjacent, pred_attack)
-        #else:
-            #loss = loss_fn(pred_attack, pred_query)
+        loss = loss_fn(pred_attack, pred_query)
+        if setting['trans']:
+               loss += beta * loss_fn(pred_attack_adjacent, pred_attack)
+
         loss.backward()
         images_grad = (alpha/(i+1)) * torch.sign(xn.grad.data)
         xn1 = torch.clamp(xn + images_grad, -1, 1)
@@ -74,8 +103,10 @@ def SIAGT_attack(model, loss_fn, xn, x0, pred_query, coord, coord_adjacent, cell
     return xn, cost_time
 
 
-def eval_psnr(loader, model, data_norm=None, setting=None):
-    model.eval()
+def eval_metrics(loader, source_model,target_model, data_norm=None,eval_bsize =None,lpips_model_fn =None,setting=None):
+    source_model.eval()
+    target_model.eval()
+
     if data_norm is None:
         data_norm = {
             'inp': {'sub': [0], 'div': [1]},
@@ -95,7 +126,6 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
     query_number = int(setting['query_number'])
     query_block = int(setting['query_block'])
     num_iters = int(setting['num_iters'])
-    is_transfer = setting['is_transfer']
     PSNR = {}
     SSIM = {}
     LPIPS ={}
@@ -137,48 +167,63 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
         deta = torch.empty_like(coord).uniform_(-delta_g,delta_g)
         coord_adjacent+=deta
         coord_adjacent.clamp_(-1, 1)
-        pred_query = batched_predict(model, inp, coord, cell, 30000)
+        if setting['source_model'] == 'lmf':
+            with torch.no_grad():
+                pred_query = source_model(inp, coord, cell)
+        else:
+            pred_query = batched_predict(source_model, inp, coord, cell, eval_bsize)
+
         perturbed_image = batch['inp'].clone()
         noise = torch.empty_like(perturbed_image).uniform_(-alpha, alpha)
         perturbed_image = torch.clamp(perturbed_image + noise, 0, 1)
 
-        xn = perturbed_image
         x0 = batch['inp'].clone()
-        images, time = SIAGT_attack(model, loss_fn, xn, x0, pred_query,coord, coord_adjacent, cell, alpha=alpha,
-                                  num_iters=num_iters,beta = beta,is_transfer = is_transfer)
-        save = images * gt_div + gt_sub
-        save.clamp_(0, 1)
-        save_images(save, j, tpye='lr')
+        xn = perturbed_image
+        images, time = SIAGT_attack(source_model, loss_fn, xn, x0, pred_query,coord, coord_adjacent, cell, eval_bsize,alpha=alpha,
+                                  num_iters=num_iters,beta = beta,setting=setting)
+        if setting['save']:
+            save = images * gt_div + gt_sub
+            save.clamp_(0, 1)
+            save_images(save, j, tpye='adv_lr')
 
         lr_ssim = utils.calculate_ssim(tensor2img(batch['inp'].squeeze()), tensor2img(save.squeeze()))
         lr_psnr = utils.calc_psnr(batch['inp'], save)
-        lr_lpips = utils.calculate_lpips(batch['inp'], save)
+        lr_lpips = utils.calculate_lpips(batch['inp'], save,lpips_model_fn)
+
         for s in pred_scales:
             shape = [round(ih * s), round(iw * s)]
             hr_coord = utils.make_coord(shape, flatten=True).cuda().unsqueeze(dim=0)
             cell = torch.ones_like(hr_coord)
             cell[:, :, 0] *= 2 / shape[0]
             cell[:, :, 1] *= 2 / shape[1]
+            if setting['target_model'] == 'lmf':
+                with torch.no_grad():
+                    pred_attack_sr = target_model(images, hr_coord, cell)
+                    pred_clean_sr = target_model(inp, hr_coord, cell)
+            else:
+                pred_attack_sr = batched_predict(target_model, images, hr_coord, cell, eval_bsize)
+                pred_clean_sr = batched_predict(target_model, inp, hr_coord, cell, eval_bsize)
 
-            pred_attack = batched_predict(model, images, hr_coord, cell, 30000)
-            pred_attack = pred_attack * gt_div + gt_sub
-            pred_attack.clamp_(0, 1)
+            pred_attack_sr = pred_attack_sr * gt_div + gt_sub
+            pred_attack_sr.clamp_(0, 1)
 
-            pred = batched_predict(model, inp, hr_coord, cell, 30000)
-            pred = pred * gt_div + gt_sub
-            pred.clamp_(0, 1)
+            pred_clean_sr = pred_clean_sr * gt_div + gt_sub
+            pred_clean_sr.clamp_(0, 1)
 
             shape = [batch['inp'].shape[0], round(ih * s), round(iw * s), 3]
-            pred_attack = pred_attack.view(*shape) \
+            pred_attack_sr = pred_attack_sr.view(*shape) \
                 .permute(0, 3, 1, 2).contiguous()
-            pred = pred.view(*shape) \
+            pred_clean_sr = pred_clean_sr.view(*shape) \
                 .permute(0, 3, 1, 2).contiguous()
-            save_images(pred_attack, j, tpye='sr')
+
+            if setting['save']:
+               save_images(pred_attack_sr, j, tpye='attack_sr')
+
             metric_fn = partial(utils.calc_psnr, dataset='benchmark', scale=s)
 
-            sr_psnr = metric_fn(pred_attack, pred)
-            sr_ssim = utils.calculate_ssim(tensor2img(pred_attack.squeeze()), tensor2img(pred.squeeze()), border=s)
-            sr_lpips = utils.calculate_lpips(pred_attack, pred)
+            sr_psnr = metric_fn(pred_attack_sr, pred_clean_sr)
+            sr_ssim = utils.calculate_ssim(tensor2img(pred_attack_sr.squeeze()), tensor2img(pred_clean_sr.squeeze()), border=s)
+            sr_lpips = utils.calculate_lpips(pred_attack_sr, pred_clean_sr,lpips_model_fn)
             PSNR[s].add(sr_psnr.item(), inp.shape[0])
             SSIM[s].add(sr_ssim, inp.shape[0])
             LPIPS[s].add(sr_lpips.item(),inp.shape[0])
@@ -192,20 +237,19 @@ def eval_psnr(loader, model, data_norm=None, setting=None):
     print('LR: ')
     print('LR_PSNR: {:.4f}'.format(LR_psnr.item()))
     print('LR_SSIM: {:.4f}'.format(LR_ssim.item()))
-    print('Cost_time: {:.4f}'.format(Cost_time.item()))
     print('LR_LPIPS: {:.4f}'.format(LR_lpips.item()))
+    print('Cost_time: {:.4f}'.format(Cost_time.item()))
 
     for s in pred_scales:
         print('scale: ' + str(s))
         print('SR_PSNR: {:.4f}'.format(PSNR[s].item()))
         print('SR_SSIM: {:.4f}'.format(SSIM[s].item()))
-        #print('SR_LPIPS: {:.4f}'.format(LPIPS[s].item().item()))
+        print('SR_LPIPS: {:.4f}'.format(LPIPS[s].item()))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='configs/test_attack/test-liif-attack.yaml')
-    parser.add_argument('--model', default='pre-models/edsr-baseline-liif.pth') # or pre-models/edsr-baseline-lte.pth
-    parser.add_argument('--gpu', default='0')
+    parser.add_argument('--config', default='configs/test_attack/test-Urban100-attack.yaml')
+    parser.add_argument('--gpu', default='2')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -213,16 +257,19 @@ if __name__ == '__main__':
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = "1"
+    lpips_model_fn = lpips.LPIPS(net='vgg').cuda()
+
     spec = config['test_dataset']
     dataset = datasets.make(spec['dataset'])
     dataset = datasets.make(spec['wrapper'], args={'dataset': dataset})
     loader = DataLoader(dataset, batch_size=spec['batch_size'],
                         num_workers=8, pin_memory=True)
-
-    model_spec = torch.load(args.model)['model']
-    model = models.make(model_spec, load_sd=True).cuda()
     setting = config['attack_setting']
-
-    eval_psnr(loader, model,
+    source_model,target_model = get_attack_model(source = setting['source_model'],target = setting['target_model'])
+    eval_metrics(loader, source_model,target_model,
               data_norm=config.get('data_norm'),
-              setting=setting)
+              eval_bsize=config.get('eval_bsize'),
+              lpips_model_fn = lpips_model_fn,
+              setting=setting
+              )

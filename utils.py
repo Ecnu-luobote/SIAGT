@@ -9,7 +9,6 @@ from tensorboardX import SummaryWriter
 import lpips
 from torchvision.transforms.functional import normalize
 
-loss_fn_vgg = lpips.LPIPS(net='vgg').cuda()
 class Averager():
 
     def __init__(self):
@@ -194,13 +193,13 @@ def calculate_ssim(img1, img2, border=0):
     else:
         raise ValueError('Wrong input image dimensions.')
 
-def calculate_lpips(img1, img2):
+def calculate_lpips(img1, img2,lpips_model_fn):
     mean = [0.5, 0.5, 0.5]
     std = [0.5, 0.5, 0.5]
     normalize(img1, mean, std, inplace=True)
     normalize(img2, mean, std, inplace=True)
       # RGB, normalized to [-1,1]
-    lpips_val = loss_fn_vgg(img1, img2)
+    lpips_val = lpips_model_fn(img1, img2)
     return lpips_val
 
 

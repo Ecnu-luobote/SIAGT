@@ -93,7 +93,7 @@ class SRAttack(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        img_lr, img_hr = self.dataset[idx]
+        img_lr  = self.dataset[idx]
         hr = torch.ones(img_lr.shape[-2]* self.cell,img_lr.shape[-1]* self.cell) # assume int scale
         hr_coord = make_coord(hr.shape[-2:], flatten=True)
         #生成固定cell
@@ -106,30 +106,29 @@ class SRAttack(Dataset):
             'cell': cell
         }
 
-@register('sr-attack2')
+@register('sr-attack-Urban100')
 class SRAttack2(Dataset):
 
-    def __init__(self, dataset, inp_size=None, augment=False, sample_q=None,scale =None):
+    def __init__(self, dataset, inp_size=None, augment=False, sample_q=None,cell =None):
         self.dataset = dataset
         self.inp_size = inp_size
         self.augment = augment
         self.sample_q = sample_q
-        self.scale = scale
+        self.cell = cell
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
         s = 8
-        img_lr, img = self.dataset[idx]
+        img = self.dataset[idx]
         h_lr = math.floor(img.shape[-2] / s + 1e-9)
         w_lr = math.floor(img.shape[-1] / s + 1e-9)
         #下采样8倍
         img = img[:, :round(h_lr * s), :round(w_lr * s)]  # assume round int
         img_down = resize_fn(img, (h_lr, w_lr))
         img_lr, img_hr = img_down, img
-        scale = 2
-        hr = torch.ones(round(img_lr.shape[-2]*scale),round(img_lr.shape[-1]*scale)) # assume int scale
+        hr = torch.ones(round(img_lr.shape[-2]*self.cell),round(img_lr.shape[-1]*self.cell)) # assume int scale
         hr_coord = make_coord(hr.shape[-2:], flatten=True)
         cell = torch.ones_like(hr_coord)
         cell[:, 0] *= 2 / hr.shape[-2]

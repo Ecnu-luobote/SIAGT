@@ -10,7 +10,7 @@ from utils import make_coord
 @register('liif')
 class LIIF(nn.Module):
 
-    def __init__(self, encoder_spec, imnet_spec=None,
+    def __init__(self, encoder_spec,pdn_spec=None,basis_spec=None, imnet_spec=None,
                  local_ensemble=True, feat_unfold=True, cell_decode=True):
         super().__init__()
         self.local_ensemble = local_ensemble
@@ -18,6 +18,18 @@ class LIIF(nn.Module):
         self.cell_decode = cell_decode
 
         self.encoder = models.make(encoder_spec)
+
+        if pdn_spec is not None:
+            self.pdn=models.make(pdn_spec)
+            self.use_pdn=True
+        else:
+            self.use_pdn = False
+        if basis_spec is not None:
+            self.basis=models.make(basis_spec)
+            self.use_basis=True
+            self.B,self.b=self.basis()
+        else:
+            self.use_basis = False
 
         if imnet_spec is not None:
             imnet_in_dim = self.encoder.out_dim
@@ -90,21 +102,29 @@ class LIIF(nn.Module):
                     inp = torch.cat([inp, rel_cell], dim=-1)
 
                 bs, q = coord.shape[:2]
-                pred = self.imnet(inp.view(bs * q, -1)).view(bs, q, -1)
+
+                if self.use_pdn:
+                    Coeff=self.pdn(inp) # out:(b,h*w,K)
+                else:
+                    Coeff=torch.ones([inp.shape[0],inp.shape[1],1])
+                if self.use_basis:
+
+                    pred = self.imnet(inp.view(bs * q, -1),Coeff.view(-1,Coeff.shape[2]),self.B,self.b).view(bs, q, -1)
+                else:
+                    pred = self.imnet(inp.view(bs * q, -1)).view(bs, q, -1)
                 preds.append(pred)
 
                 area = torch.abs(rel_coord[:, :, 0] * rel_coord[:, :, 1])
                 areas.append(area + 1e-9)
 
         tot_area = torch.stack(areas).sum(dim=0)
-        four_pred = torch.stack(preds,dim=0)
         if self.local_ensemble:
             t = areas[0]; areas[0] = areas[3]; areas[3] = t
             t = areas[1]; areas[1] = areas[2]; areas[2] = t
         ret = 0
         for pred, area in zip(preds, areas):
             ret = ret + pred * (area / tot_area).unsqueeze(-1)
-        return ret #,four_pred
+        return ret
 
     def forward(self, inp, coord, cell):
         self.gen_feat(inp)

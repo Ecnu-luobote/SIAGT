@@ -1,0 +1,29 @@
+test_dataset:
+  dataset:
+    name: image-folder
+    args:
+      root_path: ./load/benchmark/Urban100/HR
+  wrapper:
+    name: sr-attack-Urban100
+    args:
+      cell: 2
+  batch_size: 1
+eval_bsize: 30000
+
+data_norm:
+  inp: {sub: [0.5], div: [0.5]}
+  gt: {sub: [0.5], div: [0.5]}
+
+attack_setting:
+  alpha: 0.031372 #8/255
+  beta: 2
+  delta_g: 0.005
+  num_iters: 50
+  query_number: 4
+  query_block: 1
+  pred_scales: []
+  source_model: liif #[liif,lte,aliif,lmf]
+  target_model: liif
+  save: True
+  trans: True
+
