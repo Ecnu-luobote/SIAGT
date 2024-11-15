@@ -57,12 +57,11 @@ python SIAGT.py --config configs/test_attack/test-liif-attack.yaml --model pre-m
 ```
 
 - result
-
+Due to the randomness of the attack, there may be slight fluctuations in the results.
   ```
   LR: 
   LR_PSNR: 38.3284
   LR_SSIM: 0.9673
-  Cost_time: 8.6574
   LR_LPIPS: 0.0371
   scale: 2
   SR_PSNR: 17.8614
