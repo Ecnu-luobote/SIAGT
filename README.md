@@ -30,7 +30,7 @@ RDN-LIIF|256M|[Dropbox](https://www.dropbox.com/s/mzha6ll9kb9bwy0/rdn-liif.pth?d
 **1. Running the Attack code**
 
 ```
-python SIAGY.py --config configs/test_attack/test-liif-attack.yaml --model "your pre-model"
+python SIAGT.py --config configs/test_attack/test-liif-attack.yaml --model "your pre-model"
 ```
 
 **2. Tuning parameters**
@@ -53,7 +53,7 @@ attack_setting:
 ```
 
 ```
-python SIAGY.py --config configs/test_attack/test-liif-attack.yaml --model pre-models/edsr-baseline-liif.pth
+python SIAGT.py --config configs/test_attack/test-liif-attack.yaml --model pre-models/edsr-baseline-liif.pth
 ```
 
 - result
