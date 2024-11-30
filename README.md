@@ -1,6 +1,6 @@
 # Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution
 
-This repository is implementation for SIAGT,
+This repository is implementation for SIAGT:
 
 > **Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution**<br>
 > Yihao Huang, Xin Luo, Qing Guo, Felix Juefei-Xu,Xiaojun Jia,Weikai Miao,Geguang Pu, Yang Liu <br>
