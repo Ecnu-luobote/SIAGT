@@ -1,10 +1,13 @@
-# LIIF
+# Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution
 
-This repository is implementation for SIAGT("Scale-Invariant Adversarial Attack
+This repository is implementation for SIAGT,
 
-against Arbitrary-scale Super-resolution"):
+> **Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution**<br>
+> Yihao Huang, Xin Luo, Qing Guo, Felix Juefei-Xu,Xiaojun Jia,Weikai Miao,Geguang Pu, Yang Liu <br>
 
-![image-20241114151758052](C:\Users\luoxin\AppData\Roaming\Typora\typora-user-images\image-20241114151758052.png)
+>**Abstract**: <br>
+> The advent of local continuous image function (LIIF) has garnered significant attention for arbitrary-scale super-resolution (SR) techniques. However, while the vulnerabilities of fixed-scale SR have been assessed, the robustness of continuous representation-based arbitrary-scale SR against adversarial attacks remains an area warranting further exploration. The elaborately designed adversarial attacks for fixed-scale SR are scale-dependent, which will cause time-consuming and memory-consuming problems when applied to arbitrary-scale SR. To address this concern, we propose a simple yet effective ``scale-invariant'' SR adversarial attack method with good transferability, termed \textbf{SIAGT}. Specifically, we propose to construct resource-saving attacks by exploiting finite discrete points of continuous representation. In addition, we formulate a coordinate-dependent loss to enhance the cross-model transferability of the attack. The attack can significantly deteriorate the SR images while introducing imperceptible distortion to the targeted low-resolution (LR) images. Experiments carried out on three popular LIIF-based SR approaches and four classical SR datasets show remarkable attack performance and transferability of SIAGT.
+
 
 ### Environment
 - Python 3
