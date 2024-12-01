@@ -48,7 +48,7 @@ attack_setting:
 **2. Run**
 
 ```
-python SIAGT.py --config configs/test_attack/test-B100-attack.yaml --model "your pre-model"
+python SIAGT.py --config configs/test_attack/test-B100-attack.yaml --gpu '0'
 ```
 
 # Acknowledge
