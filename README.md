@@ -1,6 +1,6 @@
 # Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution
 
-This repository is implementation for SIAGT:
+This repository is implementation for SIAGT, Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[CiaoSR](https://github.com/caojiezhang/CiaoSR)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported.
 
 > **Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution**<br>
 > Yihao Huang, Xin Luo, Qing Guo, Felix Juefei-Xu, Xiaojun Jia, Weikai Miao, Geguang Pu, Yang Liu <br>
@@ -18,7 +18,7 @@ This repository is implementation for SIAGT:
 
 ## Quick Start
 
-1. Prepare pre-trained weights in the pre-model folder. Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[CiaoSR](https://github.com/caojiezhang/CiaoSR)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported.
+1. Prepare pre-trained weights in the pre-model folder. 
  - For LIIF、LTE、A-LIIF、LMF, you can modify the "source_model" and "target_model" in the configuration file to attack;
  - For CiaoSR, you can refer to the "SIAGT.py" file and modify the "CiaoSR" network in the [CiaoSR](https://github.com/caojiezhang/CiaoSR) to attack.
 
