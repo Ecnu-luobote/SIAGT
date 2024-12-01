@@ -1,6 +1,7 @@
 # Scale-Invariant Adversarial Attack against Arbitrary-scale Super-resolution
-<img src="https://github.com/user-attachments/assets/0e78d2b1-95d5-4f16-a391-b6a4e9434551" alt="teaser_2_00" width="400" />
-
+<div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/0e78d2b1-95d5-4f16-a391-b6a4e9434551" alt="teaser_2_00" width="500" />
+</div>
 
 This repository is implementation for SIAGT, Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[CiaoSR](https://github.com/caojiezhang/CiaoSR)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported. If you encounter any problems during execution, please raise an issue.
 
