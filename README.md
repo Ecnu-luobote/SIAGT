@@ -18,7 +18,7 @@ This repository is implementation for SIAGT:
 
 ## Quick Start
 
-1. Prepare pre-trained weights in the pre-model folder. Currently, LIIF, LTE, A-LIIF, and LMF models are supported.
+1. Prepare pre-trained weights in the pre-model folder. Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported. For [CiaoSR](https://github.com/caojiezhang/CiaoSR) attack code, please refer to SIAGT.py file and [CiaoSR](https://github.com/caojiezhang/CiaoSR) repository
 
 2. Download benchmark datasets: `cd` into `load/`. Download and `tar -xf` the [benchmark datasets](https://cv.snu.ac.kr/research/EDSR/benchmark.tar) (provided by [this repo](https://github.com/thstkdgus35/EDSR-PyTorch)), get a `load/benchmark` folder with sub-folders `Set5/, Set14/, B100/, Urban100/`.
 
@@ -46,7 +46,7 @@ attack_setting:
 **2. Run**
 
 ```
-python SIAGY.py --config configs/test_attack/test-B100-attack.yaml --model "your pre-model"
+python SIAGT.py --config configs/test_attack/test-B100-attack.yaml --model "your pre-model"
 ```
 
 # Acknowledge
