@@ -18,7 +18,9 @@ This repository is implementation for SIAGT:
 
 ## Quick Start
 
-1. Prepare pre-trained weights in the pre-model folder. Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[CiaoSR](https://github.com/caojiezhang/CiaoSR)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported. For LIIF、LTE、A-LIIF、LMF,you can modify the "source_model" and "target_model" in the configuration file to attack; For CiaoSR, you can refer to the "SIAGT.py" file and modify the "CiaoSR" network in the CiaoSR(https://github.com/caojiezhang/CiaoSR) to attack;
+1. Prepare pre-trained weights in the pre-model folder. Currently,  [LIIF](https://github.com/yinboc/liif)、[LTE](https://github.com/jaewon-lee-b/lte)、[CiaoSR](https://github.com/caojiezhang/CiaoSR)、[A-LIIF](https://github.com/LeeHW-THU/A-LIIF)、[LMF](https://github.com/HeZongyao/LMF) models are supported.
+ - For LIIF、LTE、A-LIIF、LMF, you can modify the "source_model" and "target_model" in the configuration file to attack;
+ - For CiaoSR, you can refer to the "SIAGT.py" file and modify the "CiaoSR" network in the [CiaoSR](https://github.com/caojiezhang/CiaoSR) to attack.
 
 2. Download benchmark datasets: `cd` into `load/`. Download and `tar -xf` the [benchmark datasets](https://cv.snu.ac.kr/research/EDSR/benchmark.tar) (provided by [this repo](https://github.com/thstkdgus35/EDSR-PyTorch)), get a `load/benchmark` folder with sub-folders `Set5/, Set14/, B100/, Urban100/`.
 
